@@ -345,6 +345,10 @@ header {
     text-align: center;
     padding: 4px;
     font-size: 0.85rem;
+    line-height: 1.1;
+    overflow: hidden;
+    word-break: break-word;
+    z-index: 2;
 }
 .bubble:active { transform: scale(0.9); }
 
@@ -373,6 +377,8 @@ header {
     align-items: center;
     box-shadow: 0 5px 15px rgba(0,0,0,0.4);
     white-space: nowrap;
+    text-align: center;
+    z-index: 2;
 }
 
 .feedback-icon {
@@ -433,6 +439,17 @@ header {
     .option-btn { font-size: 1.1rem; }
     .question-text { font-size: 1.4rem; }
     .social-links a { width: 55px; height: 55px; font-size: 2.2rem; }
+    .bubbles-container { height: 380px; }
+    .bubble { font-size: 0.68rem; padding: 2px; }
+    .targets-container { height: 320px; }
+    .target { padding: 8px 12px; font-size: 0.72rem; white-space: normal; max-width: 42%; text-align: center; line-height: 1.15; }
+}
+
+@media (max-width: 480px) {
+    .bubbles-container { height: 320px; }
+    .bubble { font-size: 0.6rem; }
+    .targets-container { height: 280px; }
+    .target { font-size: 0.65rem; padding: 6px 10px; max-width: 46%; }
 }
 </style>
 </head>
@@ -755,19 +772,24 @@ header {
             bubblesArea.innerHTML = '';
             const width = bubblesArea.clientWidth;
             const height = bubblesArea.clientHeight;
+            const isMobile = width < 480;
 
             const segmentWidth = width / qData.options.length;
+            // Cap bubble size so it always fits inside its own column, with a sensible
+            // minimum so text stays readable, and a hard cap on small screens.
+            const maxAllowed = isMobile ? 78 : 110;
+            const baseSize = Math.max(46, Math.min(segmentWidth - 14, maxAllowed));
 
             qData.options.forEach((opt, i) => {
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
                 bubble.innerText = opt;
-                const size = 85 + Math.random() * 25;
+                const size = baseSize - Math.random() * (baseSize * 0.12);
                 bubble.style.width = size + 'px';
                 bubble.style.height = size + 'px';
 
-                let minLeft = i * segmentWidth;
-                let maxLeft = (i + 1) * segmentWidth - size;
+                let minLeft = i * segmentWidth + 4;
+                let maxLeft = (i + 1) * segmentWidth - size - 4;
                 if (maxLeft < minLeft) maxLeft = minLeft;
 
                 bubble.style.left = (minLeft + Math.random() * (maxLeft - minLeft)) + 'px';
@@ -777,7 +799,8 @@ header {
                 bubblesArea.appendChild(bubble);
 
                 let currentTop = -100 - (Math.random() * 150);
-                let speed = 1.1 + Math.random() * 1.3;
+                // Slower, gentler fall speed (roughly half the original pace).
+                let speed = 0.45 + Math.random() * 0.55;
 
                 const interval = setInterval(() => {
                     currentTop += speed;
@@ -798,20 +821,27 @@ header {
             targetsArea.innerHTML = '';
             const height = targetsArea.clientHeight;
             const width = targetsArea.clientWidth;
+            const isMobile = width < 480;
+            const laneHeight = height / qData.options.length;
+            const targetH = isMobile ? 46 : 60;
 
             qData.options.forEach((opt, i) => {
                 const target = document.createElement('div');
                 target.className = 'target';
                 target.innerText = opt;
 
-                target.style.top = (Math.random() * (height - 80)) + 'px';
-                target.style.left = '-180px';
+                // Each option gets its own horizontal lane so targets never stack
+                // on top of each other vertically.
+                const laneTop = (i * laneHeight) + Math.max(0, (laneHeight - targetH) / 2);
+                target.style.top = laneTop + 'px';
+                target.style.left = '-220px';
 
                 target.onclick = () => handleAnswer(opt === qData.answer, opt, qData);
                 targetsArea.appendChild(target);
 
-                let currentLeft = -150 - (Math.random() * 200);
-                let speed = 1.4 + Math.random() * 1.6;
+                let currentLeft = -180 - (Math.random() * 220);
+                // Slower, gentler travel speed (roughly half the original pace).
+                let speed = 0.6 + Math.random() * 0.7;
 
                 const interval = setInterval(() => {
                     currentLeft += speed;
